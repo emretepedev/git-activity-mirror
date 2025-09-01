@@ -15,7 +15,7 @@ run_project_hook_if_exists() {
       echo "Project hook found for $HOOK"
     fi
 
-    sh "$PROJECT_HOOK"
+    "$PROJECT_HOOK" "$@"
 
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
@@ -33,7 +33,7 @@ run_global_hook_if_exists() {
       echo "Global hook found for $HOOK"
     fi
 
-    sh "$GLOBAL_HOOK"
+    "$GLOBAL_HOOK" "$@"
 
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
@@ -42,8 +42,8 @@ run_global_hook_if_exists() {
   fi
 }
 
-run_project_hook_if_exists
+run_project_hook_if_exists "$@"
 
-run_global_hook_if_exists
+run_global_hook_if_exists "$@"
 
 exit 0
