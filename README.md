@@ -67,11 +67,25 @@ To learn more, check out the [official Git Hooks documentation](https://git-scm.
 
 **Note:** Before using the hook scripts from the `git-hooks-examples` directory, you **must** set the `ACTIVITY_REPO_DIR` environment variable as described in the [Installation](#installation) section.
 
-#### Husky Compatibility
+#### Compatibility
+
+##### Husky
 
 For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, an additional `init.sh` file is provided in the `git-hooks-examples/husky/` directory. This file enables compatibility with Husky's startup files system, allowing the hooks to run properly in Husky-managed environments.
 
 You need to add this `init.sh` file to your Husky startup files directory. For detailed information about Husky startup files and how to configure them, please refer to the [official Husky documentation](https://typicode.github.io/husky/how-to.html#startup-files).
+
+##### Lefthook
+
+For projects using [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks management, a ready-to-use configuration is provided in the `git-hooks-examples/lefthook/` directory. This setup allows lefthook to work alongside global Git hooks by automatically calling them when present.
+
+To integrate with your existing lefthook setup:
+
+1. Copy the `lefthook.yml` and `.lefthook/` directory from `git-hooks-examples/lefthook/` to your project root
+2. Modify the configuration to match your project's existing hooks and requirements
+3. The provided `global-hook.sh` script will automatically detect and execute global Git hooks if they differ from your project-specific hooks
+
+This approach ensures that your lefthook-managed project hooks can coexist with the git-activity-mirror global hooks seamlessly.
 
 ### Option 2: Using Aliases
 
