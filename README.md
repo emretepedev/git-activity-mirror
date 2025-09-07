@@ -83,7 +83,7 @@ To integrate with your existing lefthook setup:
 
 1. Copy the `lefthook.yml` and `.lefthook/` directory from `git-hooks-examples/lefthook/` to your project root
 2. Modify the configuration to match your project's existing hooks and requirements
-3. The provided `global-hook.sh` script will automatically detect and execute global Git hooks if they differ from your project-specific hooks
+3. The provided `global-hook.sh` and `should-skip-global-hook.sh` scripts will automatically detect and execute global Git hooks if they differ from your project-specific hooks.
 
 This approach ensures that your lefthook-managed project hooks can coexist with the git-activity-mirror global hooks seamlessly.
 

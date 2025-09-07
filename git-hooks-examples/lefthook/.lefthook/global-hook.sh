@@ -1,17 +1,15 @@
 #!/bin/sh
 
 hook_name=$1
+shift
 
-project_hooks_dir="$(git config --get core.hooksPath 2>/dev/null || true)"
-global_hooks_dir="$(git config --global --get core.hooksPath 2>/dev/null || true)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd -P)"
 
-if [ "$project_hooks_dir" = "$global_hooks_dir" ]; then
+global_hook_path="$("$SCRIPT_DIR/should-skip-global-hook.sh" "$hook_name")"
+status=$?
+
+if [ "$status" -eq 0 ]; then
   exit 0
 fi
 
-hook_script="${global_hooks_dir%/}/$hook_name"
-if [ ! -f "$hook_script" ]; then
-  exit 0
-fi
-
-"$hook_script"
+sh "$global_hook_path" "$@"

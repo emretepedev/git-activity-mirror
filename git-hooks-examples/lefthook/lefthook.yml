@@ -8,8 +8,9 @@ post-commit:
               jobs:
                 - name: example job#1
                   run: sh .lefthook/example-job-1.sh
-          - name: trigger global hook if exists
-            run: sh .lefthook/global-hook.sh post-commit
+          - run: "sh ./.lefthook/global-hook.sh post-commit {0}"
+            skip:
+              - run: sh ./.lefthook/should-skip-global-hook.sh post-commit
 
 pre-push:
   jobs:
@@ -23,5 +24,7 @@ pre-push:
                   run: yarn lint
                 - name: example job#3
                   run: yarn test
-          - name: trigger global hook if exists
-            run: sh .lefthook/global-hook.sh pre-push
+          - run: "sh ./.lefthook/global-hook.sh pre-push {0}"
+            skip:
+              - run: sh ./.lefthook/should-skip-global-hook.sh pre-push
+            use_stdin: true
