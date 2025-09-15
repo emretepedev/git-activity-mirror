@@ -18,9 +18,11 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 ### Installation
 
 1.  **Create a Repository from This Template**
+
     Click the **`Use this template`** button at the top of this page to create a new repository in your own account.
 
 2.  **Clone Your New Repository**
+
     Clone the **new repository** you just created to your local machine.
 
 3.  **Make Scripts Executable**
@@ -71,9 +73,12 @@ To learn more, check out the [official Git Hooks documentation](https://git-scm.
 
 ##### Husky
 
-For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, an additional `init.sh` file is provided in the `git-hooks-examples/husky/` directory. This file enables compatibility with Husky's startup files system, allowing the hooks to run properly in Husky-managed environments.
+For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, version-specific compatibility files are provided in the `git-hooks-examples/husky/` directory:
 
-You need to add this `init.sh` file to your Husky startup files directory. For detailed information about Husky startup files and how to configure them, please refer to the [official Husky documentation](https://typicode.github.io/husky/how-to.html#startup-files).
+- **Husky v8**: Use the `.huskyrc` file from `git-hooks-examples/husky/v8/` to run global hooks if they exist.
+- **Husky v9**: Use the `init.sh` file from `git-hooks-examples/husky/v9/` to handle both project and global hooks.
+
+For Husky, add the appropriate file to your Husky startup files directory. For detailed information about Husky startup files and how to configure them, please refer to the [official Husky documentation](https://typicode.github.io/husky/how-to.html#startup-files).
 
 ##### Lefthook
 
