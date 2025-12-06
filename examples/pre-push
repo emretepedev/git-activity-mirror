@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ -z "$ACTIVITY_REPO_DIR" ]; then
+	echo "Warning: ACTIVITY_REPO_DIR environment variable is not set. Skipping activity sync."
+	exit 0
+fi
+
+HOOK_RUNNER="$ACTIVITY_REPO_DIR/runner.sh"
+
+if [ -f "$HOOK_RUNNER" ]; then
+	sh "$HOOK_RUNNER" "$(basename "$0")"
+else
+	echo "Warning: $HOOK_RUNNER file not found"
+fi

@@ -63,30 +63,30 @@ You can use the scripts manually, but for the best experience, we recommend sett
 
 ### Option 1: Using Git Hooks (Recommended)
 
-For complete automation, you can configure the scripts to run as a `post-commit` or `pre-push` Git hook. This will trigger the mirror action automatically after every commit or before every push. You can find ready-to-use examples in the `git-hooks-examples` folder to get started.
+For complete automation, you can configure the scripts to run as a `post-commit` or `pre-push` Git hook. This will trigger the mirror action automatically after every commit or before every push. You can find ready-to-use examples in the `examples` folder to get started.
 
 To learn more, check out the [official Git Hooks documentation](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 
-**Note:** Before using the hook scripts from the `git-hooks-examples` directory, you **must** set the `ACTIVITY_REPO_DIR` environment variable as described in the [Installation](#installation) section.
+**Note:** Before using the hook scripts from the `examples` directory, you **must** set the `ACTIVITY_REPO_DIR` environment variable as described in the [Installation](#installation) section.
 
 #### Compatibility
 
 ##### Husky
 
-For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, version-specific compatibility files are provided in the `git-hooks-examples/husky/` directory:
+For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, version-specific compatibility files are provided in the `examples/husky/` directory:
 
-- **Husky v8**: Use the `.huskyrc` file from `git-hooks-examples/husky/v8/` to run global hooks if they exist.
-- **Husky v9**: Use the `init.sh` file from `git-hooks-examples/husky/v9/` to handle both project and global hooks.
+- **Husky v8**: Use the `.huskyrc` file from `examples/husky/v8/` to run global hooks if they exist.
+- **Husky v9**: Use the `init.sh` file from `examples/husky/v9/` to handle both project and global hooks.
 
 For Husky, add the appropriate file to your Husky startup files directory. For detailed information about Husky startup files and how to configure them, please refer to the [official Husky documentation](https://typicode.github.io/husky/how-to.html#startup-files).
 
 ##### Lefthook
 
-For projects using [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks management, a ready-to-use configuration is provided in the `git-hooks-examples/lefthook/` directory. This setup allows lefthook to work alongside global Git hooks by automatically calling them when present.
+For projects using [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks management, a ready-to-use configuration is provided in the `examples/lefthook/` directory. This setup allows lefthook to work alongside global Git hooks by automatically calling them when present.
 
 To integrate with your existing lefthook setup:
 
-1. Copy the `lefthook.yml` and `.lefthook/` directory from `git-hooks-examples/lefthook/` to your project root
+1. Copy the `lefthook.yml` and `.lefthook/` directory from `examples/lefthook/` to your project root
 2. Modify the configuration to match your project's existing hooks and requirements
 3. The provided `global-hook.sh` and `should-skip-global-hook.sh` scripts will automatically detect and execute global Git hooks if they differ from your project-specific hooks.
 
