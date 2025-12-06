@@ -51,7 +51,6 @@ The scripts work by creating an empty commit and pushing it to the target reposi
     You can configure the scripts by editing the `config.sh` file.
 
     ```bash
-    # show info messages (default is false)
     SHOW_INFO_MESSAGES=false
     ```
 
