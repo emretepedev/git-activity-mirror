@@ -1,0 +1,21 @@
+# Personal Git Activity Mirror wiring, kept separate so lefthook.yml stays
+# project-only. lefthook merges this file into lefthook.yml automatically and
+# appends these jobs after the project jobs. In your own project add
+# `lefthook-local.yml` to .gitignore so this stays personal.
+#
+# These jobs rely on the top-level `piped: true` in lefthook.yml: if an
+# earlier project job fails they are skipped, so a rejected push is not
+# mirrored. The `skip` guard additionally skips the job when
+# should-skip-global-hook.sh exits 0 (e.g. no global hook applies here).
+post-commit:
+  jobs:
+    - run: "sh ./.lefthook/global-hook.sh post-commit {0}"
+      skip:
+        - run: sh ./.lefthook/should-skip-global-hook.sh post-commit
+
+pre-push:
+  jobs:
+    - run: "sh ./.lefthook/global-hook.sh pre-push {0}"
+      skip:
+        - run: sh ./.lefthook/should-skip-global-hook.sh pre-push
+      use_stdin: true
