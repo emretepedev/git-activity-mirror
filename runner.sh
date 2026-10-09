@@ -4,6 +4,9 @@ HOOK_NAME="$1"
 
 ACTIVITY_REPO_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 
+# shellcheck source=/dev/null
+. "$ACTIVITY_REPO_DIR/config.sh"
+
 get_hostname() {
 	_get_hostname_url="$1"
 	case "$_get_hostname_url" in
@@ -53,5 +56,12 @@ fi
 
 case "$HOOK_NAME" in
 post-commit) bash "$ACTIVITY_REPO_DIR/record-activity.sh" ;;
-pre-push) bash "$ACTIVITY_REPO_DIR/publish-activity.sh" ;;
+pre-push)
+	if ! bash "$ACTIVITY_REPO_DIR/publish-activity.sh"; then
+		if [ "$BLOCK_PUSH_ON_PUBLISH_FAILURE" = true ]; then
+			exit 1
+		fi
+		echo "Warning: activity mirror not published, continuing with the push." >&2
+	fi
+	;;
 esac

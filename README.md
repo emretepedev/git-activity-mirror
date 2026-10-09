@@ -40,23 +40,19 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
 4.  **Configuration** (optional)
 
-    You can configure the scripts by editing the `config.sh` file.
-
-    ```bash
-    SHOW_INFO_MESSAGES=false
-    ```
-
-    Personal values belong in `config.local.sh` instead, next to `config.sh`. It is gitignored and loaded after `config.sh`, so anything set there overrides the defaults without ending up in your repository:
+    Every setting has a default in `config.sh`. To change any of them, create `config.local.sh` next to it and set only the ones you want to change. It is loaded after `config.sh`, so a value set there overrides the default, and anything left out keeps it. `config.local.sh` is gitignored, so personal values never end up in your repository.
 
     ```bash
     # config.local.sh
     EXPECTED_USER_EMAIL="public-email@example.com"
+    BLOCK_PUSH_ON_PUBLISH_FAILURE=true
     ```
 
-    | Variable              | Default | Description |
-    | --------------------- | ------- | ----------- |
-    | `SHOW_INFO_MESSAGES`  | `false` | Print a short message whenever a script runs. |
-    | `EXPECTED_USER_EMAIL` | unset   | The email every mirror commit must carry. When set, `record-activity.sh` refuses to create a mirror commit under any other email, and `publish-activity.sh` refuses to push if any unpublished commit has a different author or committer. When unset, both checks are skipped. |
+    | Variable                        | Default | Description |
+    | ------------------------------- | ------- | ----------- |
+    | `SHOW_INFO_MESSAGES`            | `false` | Print a short message whenever a script runs. |
+    | `BLOCK_PUSH_ON_PUBLISH_FAILURE` | `false` | When `false`, a failed mirror publish only prints a warning and your push goes ahead. When `true`, it aborts your push. |
+    | `EXPECTED_USER_EMAIL`           | empty   | The email every mirror commit must carry. When set, `record-activity.sh` refuses to create a mirror commit under any other email, and `publish-activity.sh` refuses to push if any unpublished commit has a different author or committer. When empty, both checks are skipped. |
 
     `EXPECTED_USER_EMAIL` is recommended if you use more than one Git identity (see [Using with Multiple Git Accounts](#using-with-multiple-git-accounts-eg-workpersonal)). It catches a work identity leaking into your public mirror, including from environments that redirect Git's config lookup (e.g. a different `HOME`), which the scripts cannot detect otherwise. The push check needs the remote-tracking branch to compare against; if it is missing, run `git fetch` once in this repository.
 
@@ -64,7 +60,7 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
 ## Usage
 
-Once the hooks are registered, every commit in any repository records an empty commit in the mirror, and every push publishes the mirror first. If publishing fails, the push is aborted, so a broken mirror cannot go unnoticed.
+Once the hooks are registered, every commit in any repository records an empty commit in the mirror, and every push publishes the mirror first. If publishing fails, the hook prints a warning and the push goes ahead; the unpublished mirror commits go out with the next successful publish. Set `BLOCK_PUSH_ON_PUBLISH_FAILURE=true` to abort the push instead.
 
 Some repositories are skipped:
 
