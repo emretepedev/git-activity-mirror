@@ -12,8 +12,8 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
 ### Prerequisites
 
-- **Git** must be installed on your system.
-- **A Bash-compatible shell** (like Bash or Zsh).
+- **Git 2.54 or newer**, which can define hooks in Git's configuration.
+- **Bash**
 
 ### Installation
 
@@ -25,28 +25,20 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
     Clone the **new repository** you just created to your local machine.
 
-3.  **Make Scripts Executable**
+3.  **Register the Hooks**
 
-    Grant execution permissions to the scripts so they can be run from the command line.
-
-    ```bash
-    chmod +x /path/to/record-activity.sh
-    chmod +x /path/to/publish-activity.sh
-    ```
-
-4.  **Set the Environment Variable**
-
-    > **Note:** This step is only required if you are using the [Git Hooks](#option-1-using-git-hooks-recommended) option.
-
-    To allow **global Git hooks** to locate this repository, you must set an environment variable.
-
-    Add the following line to your shell's configuration file (e.g., `~/.bashrc`, `~/.zshrc`) and reload your shell's configuration for the changes to take effect. **Remember to replace the path** with the actual location where you cloned the repository.
+    Register two global hooks, replacing the path with the location of your clone:
 
     ```bash
-    export ACTIVITY_REPO_DIR="/path/to/git-activity-mirror"
+    git config --global hook.activity-mirror-record.event post-commit
+    git config --global hook.activity-mirror-record.command "sh /path/to/git-activity-mirror/runner.sh post-commit"
+    git config --global hook.activity-mirror-publish.event pre-push
+    git config --global hook.activity-mirror-publish.command "sh /path/to/git-activity-mirror/runner.sh pre-push"
     ```
 
-5.  **Configuration** (optional)
+    Hooks defined in configuration run in addition to a repository's own hooks, whether those come from `.git/hooks`, Husky, Lefthook, or a local `core.hooksPath`. No per-project setup is needed.
+
+4.  **Configuration** (optional)
 
     You can configure the scripts by editing the `config.sh` file.
 
@@ -72,56 +64,23 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
 ## Usage
 
-You can use the scripts manually, but for the best experience, it's recommended to set up aliases or Git hooks.
+Once the hooks are registered, every commit in any repository records an empty commit in the mirror, and every push publishes the mirror first. If publishing fails, the push is aborted, so a broken mirror cannot go unnoticed.
 
-### Option 1: Using Git Hooks (Recommended)
+Some repositories are skipped:
 
-For complete automation, you can configure the scripts to run as a `post-commit` or `pre-push` Git hook. This will trigger the mirror action automatically after every commit or before every push. You can find ready-to-use examples in the `examples` folder to get started.
+- The mirror repository itself.
+- Repositories whose commits already count on the mirror's profile: same email as the mirror, and the same host or no remote yet.
 
-To learn more, check out the [official Git Hooks documentation](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
-
-**Note:** Before using the hook scripts from the `examples` directory, you **must** set the `ACTIVITY_REPO_DIR` environment variable as described in the [Installation](#installation) section.
-
-#### Compatibility
-
-##### Husky
-
-For projects using [Husky](https://typicode.github.io/husky/) for Git hooks management, version-specific compatibility files are provided in the `examples/husky/` directory:
-
-- **Husky v8**: Use the `.huskyrc` file from `examples/husky/v8/` to run global hooks if they exist.
-- **Husky v9**: Use the `init.sh` file from `examples/husky/v9/` to handle both project and global hooks.
-
-For Husky, add the appropriate file to your Husky startup files directory. For detailed information about Husky startup files and how to configure them, please refer to the [official Husky documentation](https://typicode.github.io/husky/how-to.html#startup-files).
-
-##### Lefthook
-
-For projects using [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks management, a ready-to-use configuration is provided in the `examples/lefthook/` directory. This setup allows lefthook to work alongside global Git hooks by automatically calling them when present.
-
-The configuration is split into two files so the activity-mirror wiring stays personal:
-
-- `lefthook.yml` holds your project hooks only (kept clean and committed with the repo).
-- `lefthook-local.yml` holds the activity-mirror jobs; lefthook merges it into `lefthook.yml` automatically and appends its jobs after the project jobs.
-
-To integrate with your existing lefthook setup:
-
-1. Copy `lefthook.yml`, `lefthook-local.yml`, and the `.lefthook/` directory from `examples/lefthook/` to your project root
-2. Add `lefthook-local.yml` to your `.gitignore` so the mirror wiring stays local to your machine
-3. Modify `lefthook.yml` to match your project's existing hooks and requirements
-4. The provided `global-hook.sh` and `should-skip-global-hook.sh` scripts will automatically detect and execute global Git hooks if they differ from your project-specific hooks.
-
-The top-level `piped: true` in `lefthook.yml` is required: it ensures the appended mirror job runs only after the project jobs succeed, so a failed check (e.g. on `pre-push`) aborts the push without mirroring it. This approach ensures that your lefthook-managed project hooks can coexist with the git-activity-mirror global hooks seamlessly.
-
-### Option 2: Using Aliases
-
-Aliases make running the scripts effortless. Add the following lines to your shell configuration file (e.g., `~/.bashrc`, `~/.zshrc`), then restart your shell or run `source ~/.bashrc`.
+To turn the mirror off for a single repository, run this inside it:
 
 ```bash
-# Alias to first create the mirror commit, then your regular commit
-alias gcmsg2="/path/to/record-activity.sh && git commit -m"
-
-# Alias to first push to your primary remote, then push to the secondary remote
-alias gp2="git push && /path/to/publish-activity.sh"
+git config hook.activity-mirror-record.enabled false
+git config hook.activity-mirror-publish.enabled false
 ```
+
+`git push --no-verify` skips publishing for that one push. Commits are still recorded and are published by the next push.
+
+You can also run `record-activity.sh` and `publish-activity.sh` by hand. They skip the repository checks above.
 
 ---
 

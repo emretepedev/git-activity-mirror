@@ -50,41 +50,50 @@ if ! clean_git -C "$ACTIVITY_REPO_DIR" symbolic-ref --quiet HEAD >/dev/null; the
 	exit 1
 fi
 
-HEAD_BEFORE=$(clean_git -C "$ACTIVITY_REPO_DIR" rev-parse HEAD)
-HEAD_TREE=$(clean_git -C "$ACTIVITY_REPO_DIR" rev-parse 'HEAD^{tree}')
+# Hooks from several repos can fire at once. The old-value argument to
+# update-ref makes the loser fail instead of clobbering the winner's commit, so
+# it rebuilds on the new HEAD rather than dropping its own activity.
+for _attempt in 1 2 3 4 5; do
+	HEAD_BEFORE=$(clean_git -C "$ACTIVITY_REPO_DIR" rev-parse HEAD)
+	HEAD_TREE=$(clean_git -C "$ACTIVITY_REPO_DIR" rev-parse "$HEAD_BEFORE^{tree}")
 
-# commit-tree, not commit: the object stays unreferenced until the checks below
-# pass. stdin must stay closed, or the empty -F message makes it read one from
-# stdin, blocking in a terminal and publishing whatever was typed.
-# shellcheck disable=SC2086
-NEW_COMMIT=$(env $GIT_ENV_SCRUB \
-	GIT_AUTHOR_NAME="$GIT_USER_NAME" GIT_AUTHOR_EMAIL="$GIT_USER_EMAIL" \
-	GIT_COMMITTER_NAME="$GIT_USER_NAME" GIT_COMMITTER_EMAIL="$GIT_USER_EMAIL" \
-	git -C "$ACTIVITY_REPO_DIR" \
-	-c "user.name=$GIT_USER_NAME" -c "user.email=$GIT_USER_EMAIL" \
-	commit-tree "$SIGN_FLAG" -p "$HEAD_BEFORE" -F /dev/null "$HEAD_TREE" </dev/null)
+	# commit-tree, not commit: the object stays unreferenced until the checks below
+	# pass. stdin must stay closed, or the empty -F message makes it read one from
+	# stdin, blocking in a terminal and publishing whatever was typed.
+	# shellcheck disable=SC2086
+	NEW_COMMIT=$(env $GIT_ENV_SCRUB \
+		GIT_AUTHOR_NAME="$GIT_USER_NAME" GIT_AUTHOR_EMAIL="$GIT_USER_EMAIL" \
+		GIT_COMMITTER_NAME="$GIT_USER_NAME" GIT_COMMITTER_EMAIL="$GIT_USER_EMAIL" \
+		git -C "$ACTIVITY_REPO_DIR" \
+		-c "user.name=$GIT_USER_NAME" -c "user.email=$GIT_USER_EMAIL" \
+		commit-tree "$SIGN_FLAG" -p "$HEAD_BEFORE" -F /dev/null "$HEAD_TREE" </dev/null)
 
-ACTUAL=$(clean_git -C "$ACTIVITY_REPO_DIR" log -1 --format='%ae%x09%ce%x09%G?%x09%GF' "$NEW_COMMIT")
-ACTUAL_AUTHOR=$(printf '%s' "$ACTUAL" | cut -f1)
-ACTUAL_COMMITTER=$(printf '%s' "$ACTUAL" | cut -f2)
-ACTUAL_SIG=$(printf '%s' "$ACTUAL" | cut -f3)
-ACTUAL_KEY=$(printf '%s' "$ACTUAL" | cut -f4)
+	ACTUAL=$(clean_git -C "$ACTIVITY_REPO_DIR" log -1 --format='%ae%x09%ce%x09%G?%x09%GF' "$NEW_COMMIT")
+	ACTUAL_AUTHOR=$(printf '%s' "$ACTUAL" | cut -f1)
+	ACTUAL_COMMITTER=$(printf '%s' "$ACTUAL" | cut -f2)
+	ACTUAL_SIG=$(printf '%s' "$ACTUAL" | cut -f3)
+	ACTUAL_KEY=$(printf '%s' "$ACTUAL" | cut -f4)
 
-if [ "$ACTUAL_AUTHOR" != "$GIT_USER_EMAIL" ] || [ "$ACTUAL_COMMITTER" != "$GIT_USER_EMAIL" ]; then
-	echo "Error: identity mismatch, commit not published." >&2
-	echo "       expected <$GIT_USER_EMAIL>, got author <$ACTUAL_AUTHOR> committer <$ACTUAL_COMMITTER>." >&2
-	exit 1
-fi
+	if [ "$ACTUAL_AUTHOR" != "$GIT_USER_EMAIL" ] || [ "$ACTUAL_COMMITTER" != "$GIT_USER_EMAIL" ]; then
+		echo "Error: identity mismatch, commit not published." >&2
+		echo "       expected <$GIT_USER_EMAIL>, got author <$ACTUAL_AUTHOR> committer <$ACTUAL_COMMITTER>." >&2
+		exit 1
+	fi
 
-if [ "$ACTUAL_SIG" != "G" ]; then
-	echo "Error: commit signature is '$ACTUAL_SIG', not a good signature. Not published." >&2
-	exit 1
-fi
+	if [ "$ACTUAL_SIG" != "G" ]; then
+		echo "Error: commit signature is '$ACTUAL_SIG', not a good signature. Not published." >&2
+		exit 1
+	fi
 
-if [ -n "$GIT_SIGNING_KEY" ] && [ "${ACTUAL_KEY%"$GIT_SIGNING_KEY"}" = "$ACTUAL_KEY" ]; then
-	echo "Error: signed with $ACTUAL_KEY, expected $GIT_SIGNING_KEY. Not published." >&2
-	exit 1
-fi
+	if [ -n "$GIT_SIGNING_KEY" ] && [ "${ACTUAL_KEY%"$GIT_SIGNING_KEY"}" = "$ACTUAL_KEY" ]; then
+		echo "Error: signed with $ACTUAL_KEY, expected $GIT_SIGNING_KEY. Not published." >&2
+		exit 1
+	fi
 
-# The old-value argument makes this fail instead of clobbering a concurrent run.
-clean_git -C "$ACTIVITY_REPO_DIR" update-ref -m "record-activity" HEAD "$NEW_COMMIT" "$HEAD_BEFORE"
+	if clean_git -C "$ACTIVITY_REPO_DIR" update-ref -m "record-activity" HEAD "$NEW_COMMIT" "$HEAD_BEFORE" 2>/dev/null; then
+		exit 0
+	fi
+done
+
+echo "Error: HEAD of $ACTIVITY_REPO_DIR kept moving, activity not recorded." >&2
+exit 1
