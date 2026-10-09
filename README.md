@@ -54,11 +54,25 @@ The scripts work by creating an empty commit and pushing it to the target reposi
     SHOW_INFO_MESSAGES=false
     ```
 
+    Personal values belong in `config.local.sh` instead, next to `config.sh`. It is gitignored and loaded after `config.sh`, so anything set there overrides the defaults without ending up in your repository:
+
+    ```bash
+    # config.local.sh
+    EXPECTED_USER_EMAIL="public-email@example.com"
+    ```
+
+    | Variable              | Default | Description |
+    | --------------------- | ------- | ----------- |
+    | `SHOW_INFO_MESSAGES`  | `false` | Print a short message whenever a script runs. |
+    | `EXPECTED_USER_EMAIL` | unset   | The email every mirror commit must carry. When set, `record-activity.sh` refuses to create a mirror commit under any other email, and `publish-activity.sh` refuses to push if any unpublished commit has a different author or committer. When unset, both checks are skipped. |
+
+    `EXPECTED_USER_EMAIL` is recommended if you use more than one Git identity (see [Using with Multiple Git Accounts](#using-with-multiple-git-accounts-eg-workpersonal)). It catches a work identity leaking into your public mirror, including from environments that redirect Git's config lookup (e.g. a different `HOME`), which the scripts cannot detect otherwise. The push check needs the remote-tracking branch to compare against; if it is missing, run `git fetch` once in this repository.
+
 ---
 
 ## Usage
 
-You can use the scripts manually, but for the best experience, we recommend setting up aliases or Git hooks.
+You can use the scripts manually, but for the best experience, it's recommended to set up aliases or Git hooks.
 
 ### Option 1: Using Git Hooks (Recommended)
 
@@ -83,13 +97,19 @@ For Husky, add the appropriate file to your Husky startup files directory. For d
 
 For projects using [Lefthook](https://github.com/evilmartians/lefthook) for Git hooks management, a ready-to-use configuration is provided in the `examples/lefthook/` directory. This setup allows lefthook to work alongside global Git hooks by automatically calling them when present.
 
+The configuration is split into two files so the activity-mirror wiring stays personal:
+
+- `lefthook.yml` holds your project hooks only (kept clean and committed with the repo).
+- `lefthook-local.yml` holds the activity-mirror jobs; lefthook merges it into `lefthook.yml` automatically and appends its jobs after the project jobs.
+
 To integrate with your existing lefthook setup:
 
-1. Copy the `lefthook.yml` and `.lefthook/` directory from `examples/lefthook/` to your project root
-2. Modify the configuration to match your project's existing hooks and requirements
-3. The provided `global-hook.sh` and `should-skip-global-hook.sh` scripts will automatically detect and execute global Git hooks if they differ from your project-specific hooks.
+1. Copy `lefthook.yml`, `lefthook-local.yml`, and the `.lefthook/` directory from `examples/lefthook/` to your project root
+2. Add `lefthook-local.yml` to your `.gitignore` so the mirror wiring stays local to your machine
+3. Modify `lefthook.yml` to match your project's existing hooks and requirements
+4. The provided `global-hook.sh` and `should-skip-global-hook.sh` scripts will automatically detect and execute global Git hooks if they differ from your project-specific hooks.
 
-This approach ensures that your lefthook-managed project hooks can coexist with the git-activity-mirror global hooks seamlessly.
+The top-level `piped: true` in `lefthook.yml` is required: it ensures the appended mirror job runs only after the project jobs succeed, so a failed check (e.g. on `pre-push`) aborts the push without mirroring it. This approach ensures that your lefthook-managed project hooks can coexist with the git-activity-mirror global hooks seamlessly.
 
 ### Option 2: Using Aliases
 
@@ -121,7 +141,9 @@ You can configure a specific user name and email for just the `git-activity-mirr
    git config user.name "Public Name"
    git config user.email "public-email@example.com"
    ```
-   > **Note:** We are intentionally not using the `--global` flag. This ensures these settings apply _only_ to this repository.
+   > **Note:** This intentionally does not use the `--global` flag. This ensures these settings apply _only_ to this repository.
+
+   To have the scripts enforce this identity, also set the same email as `EXPECTED_USER_EMAIL` in `config.local.sh` (see the Configuration step under [Installation](#installation)).
 
 #### Step 2: Configure SSH for Pushing
 

@@ -1,30 +1,28 @@
+# Project hooks only. Personal Git Activity Mirror wiring lives in
+# lefthook-local.yml, which lefthook merges in at runtime (its jobs are
+# appended after the ones below).
+#
+# The top-level `piped: true` is what makes the split safe: the appended
+# mirror job runs only if every project job above it succeeds. Without it,
+# lefthook would run top-level jobs regardless of earlier failures, so a
+# failing lint/test would still trigger the mirror push. Project jobs stay
+# parallel by nesting them in a `parallel: true` group.
 post-commit:
+  piped: true
   jobs:
     - group:
-        piped: true
+        parallel: true
         jobs:
-          - group:
-              parallel: true
-              jobs:
-                - name: example job#1
-                  run: sh .lefthook/example-job-1.sh
-          - run: "sh ./.lefthook/global-hook.sh post-commit {0}"
-            skip:
-              - run: sh ./.lefthook/should-skip-global-hook.sh post-commit
+          - name: example job#1
+            run: echo "job_1"
 
 pre-push:
+  piped: true
   jobs:
     - group:
-        piped: true
+        parallel: true
         jobs:
-          - group:
-              parallel: true
-              jobs:
-                - name: example job#2
-                  run: yarn lint
-                - name: example job#3
-                  run: yarn test
-          - run: "sh ./.lefthook/global-hook.sh pre-push {0}"
-            skip:
-              - run: sh ./.lefthook/should-skip-global-hook.sh pre-push
-            use_stdin: true
+          - name: example job#2
+            run: echo "job_2"
+          - name: example job#3
+            run: echo "job_3"

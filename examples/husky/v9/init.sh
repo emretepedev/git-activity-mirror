@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# show a message when a hook is found (default is false)
 SHOW_HOOK_FOUND_MESSAGE=false
 
 HOOK=$(basename "$0")
@@ -26,6 +25,10 @@ run_project_hook_if_exists() {
 
 run_global_hook_if_exists() {
   GLOBAL_HOOKS_DIR=$(git config --global --get core.hooksPath)
+  case "$GLOBAL_HOOKS_DIR" in
+    "~/"*) GLOBAL_HOOKS_DIR="$HOME/${GLOBAL_HOOKS_DIR#"~/"}" ;;
+    "~")   GLOBAL_HOOKS_DIR="$HOME" ;;
+  esac
   GLOBAL_HOOK="${GLOBAL_HOOKS_DIR%/}/${HOOK}"
 
   if [ -n "$GLOBAL_HOOKS_DIR" ] && [ -f "$GLOBAL_HOOK" ]; then

@@ -9,6 +9,11 @@ if [ -z "$global_hooks_dir" ] || [ "$project_hooks_dir" = "$global_hooks_dir" ];
   exit 0
 fi
 
+case "$global_hooks_dir" in
+  "~/"*) global_hooks_dir="$HOME/${global_hooks_dir#"~/"}" ;;
+  "~")   global_hooks_dir="$HOME" ;;
+esac
+
 hook_script="${global_hooks_dir%/}/$hook_name"
 
 if [ ! -f "$hook_script" ]; then
