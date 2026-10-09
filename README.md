@@ -31,12 +31,14 @@ The scripts work by creating an empty commit and pushing it to the target reposi
 
     ```bash
     git config --global hook.activity-mirror-record.event post-commit
-    git config --global hook.activity-mirror-record.command "sh /path/to/git-activity-mirror/runner.sh post-commit"
+    git config --global hook.activity-mirror-record.command 'f=/path/to/git-activity-mirror/runner.sh; [ -f "$f" ] || { echo "Warning: $f not found, activity not recorded." >&2; exit 0; }; sh "$f" post-commit'
     git config --global hook.activity-mirror-publish.event pre-push
-    git config --global hook.activity-mirror-publish.command "sh /path/to/git-activity-mirror/runner.sh pre-push"
+    git config --global hook.activity-mirror-publish.command 'f=/path/to/git-activity-mirror/runner.sh; [ -f "$f" ] || { echo "Warning: $f not found, activity not published." >&2; exit 0; }; sh "$f" pre-push'
     ```
 
     Hooks defined in configuration run in addition to a repository's own hooks, whether those come from `.git/hooks`, Husky, Lefthook, or a local `core.hooksPath`. No per-project setup is needed.
+
+    The existence check keeps commits and pushes working, with a warning, on machines that share your Git configuration but have no clone of the mirror.
 
 4.  **Configuration** (optional)
 
