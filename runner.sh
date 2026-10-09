@@ -12,8 +12,11 @@ get_hostname() {
 	case "$_get_hostname_url" in
 	https://* | http://*)
 		_get_hostname_temp_url="${_get_hostname_url#*//}"
-		_get_hostname_hostname="${_get_hostname_temp_url%%/*}"
-		echo "$_get_hostname_hostname"
+		_get_hostname_authority="${_get_hostname_temp_url%%/*}"
+		# Remotes can embed credentials (https://user:token@host), and a port
+		# may follow the host; neither is part of the name to compare.
+		_get_hostname_hostname="${_get_hostname_authority##*@}"
+		echo "${_get_hostname_hostname%%:*}"
 		return
 		;;
 	esac
