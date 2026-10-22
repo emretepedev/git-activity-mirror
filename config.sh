@@ -5,6 +5,7 @@
 SHOW_INFO_MESSAGES=false
 BLOCK_PUSH_ON_PUBLISH_FAILURE=false
 EXPECTED_USER_EMAIL=""
+SIGN_COMMITS=false
 
 # runner.sh loads this file under sh, so it has to stay POSIX: `.`, not `source`.
 # Must stay an `if`: as the last command, a false `[ -f ] && .` would make

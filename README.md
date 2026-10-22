@@ -48,6 +48,7 @@ The scripts work by creating an empty commit and pushing it to the target reposi
     # config.local.sh
     EXPECTED_USER_EMAIL="public-email@example.com"
     BLOCK_PUSH_ON_PUBLISH_FAILURE=true
+    SIGN_COMMITS=true
     ```
 
     | Variable                        | Default | Description |
@@ -55,6 +56,7 @@ The scripts work by creating an empty commit and pushing it to the target reposi
     | `SHOW_INFO_MESSAGES`            | `false` | Print a short message whenever a script runs. |
     | `BLOCK_PUSH_ON_PUBLISH_FAILURE` | `false` | When `false`, a failed mirror publish only prints a warning and your push goes ahead. When `true`, it aborts your push. |
     | `EXPECTED_USER_EMAIL`           | empty   | The email every mirror commit must carry. When set, `record-activity.sh` refuses to create a mirror commit under any other email, and `publish-activity.sh` refuses to push if any unpublished commit has a different author or committer. When empty, both checks are skipped. |
+    | `SIGN_COMMITS`                  | `false` | When `true`, mirror commits are GPG-signed, with `user.signingkey` if set, and a commit is refused unless Git verifies its signature as good, which needs a key you trust (your own keys are by default). SSH signing is not supported. When `false`, mirror commits are not signed. |
 
     `EXPECTED_USER_EMAIL` is recommended if you use more than one Git identity (see [Using with Multiple Git Accounts](#using-with-multiple-git-accounts-eg-workpersonal)). It catches a work identity leaking into your public mirror, including from environments that redirect Git's config lookup (e.g. a different `HOME`), which the scripts cannot detect otherwise. The push check needs the remote-tracking branch to compare against; if it is missing, run `git fetch` once in this repository.
 

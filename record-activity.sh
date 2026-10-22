@@ -8,7 +8,7 @@ ACTIVITY_REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd
 source "$ACTIVITY_REPO_DIR/config.sh"
 
 if [ "$SHOW_INFO_MESSAGES" = true ]; then
-	echo "Commiting to sync repository"
+	echo "Committing to sync repository"
 fi
 
 # The environment comes from whichever repo triggered the hook, and GIT_CONFIG_*
@@ -27,7 +27,6 @@ clean_git() {
 
 GIT_USER_NAME=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get user.name || true)
 GIT_USER_EMAIL=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get user.email || true)
-GIT_SIGNING_KEY=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get user.signingkey || true)
 
 if [ -z "$GIT_USER_NAME" ] || [ -z "$GIT_USER_EMAIL" ]; then
 	echo "Error: cannot resolve user.name/user.email for $ACTIVITY_REPO_DIR. Not committing." >&2
@@ -39,10 +38,12 @@ if [ -n "${EXPECTED_USER_EMAIL:-}" ] && [ "$GIT_USER_EMAIL" != "$EXPECTED_USER_E
 	exit 1
 fi
 
-if [ -n "$GIT_SIGNING_KEY" ]; then
+GIT_SIGNING_KEY=""
+if [ "$SIGN_COMMITS" = true ]; then
+	GIT_SIGNING_KEY=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get user.signingkey || true)
 	SIGN_FLAG="-S$GIT_SIGNING_KEY"
 else
-	SIGN_FLAG="-S"
+	SIGN_FLAG="--no-gpg-sign"
 fi
 
 if ! clean_git -C "$ACTIVITY_REPO_DIR" symbolic-ref --quiet HEAD >/dev/null; then
@@ -80,14 +81,16 @@ for _attempt in 1 2 3 4 5; do
 		exit 1
 	fi
 
-	if [ "$ACTUAL_SIG" != "G" ]; then
-		echo "Error: commit signature is '$ACTUAL_SIG', not a good signature. Not published." >&2
-		exit 1
-	fi
+	if [ "$SIGN_COMMITS" = true ]; then
+		if [ "$ACTUAL_SIG" != "G" ]; then
+			echo "Error: commit signature is '$ACTUAL_SIG', not a good signature. Not published." >&2
+			exit 1
+		fi
 
-	if [ -n "$GIT_SIGNING_KEY" ] && [ "${ACTUAL_KEY%"$GIT_SIGNING_KEY"}" = "$ACTUAL_KEY" ]; then
-		echo "Error: signed with $ACTUAL_KEY, expected $GIT_SIGNING_KEY. Not published." >&2
-		exit 1
+		if [ -n "$GIT_SIGNING_KEY" ] && [ "${ACTUAL_KEY%"$GIT_SIGNING_KEY"}" = "$ACTUAL_KEY" ]; then
+			echo "Error: signed with $ACTUAL_KEY, expected $GIT_SIGNING_KEY. Not published." >&2
+			exit 1
+		fi
 	fi
 
 	if clean_git -C "$ACTIVITY_REPO_DIR" update-ref -m "record-activity" HEAD "$NEW_COMMIT" "$HEAD_BEFORE" 2>/dev/null; then
