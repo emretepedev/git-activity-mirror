@@ -36,15 +36,27 @@ get_hostname() {
 	echo ""
 }
 
+# `git -c` overrides reach hooks as GIT_ variables. Applied to the mirror's
+# config too, they would make the skip check below compare a value with itself.
+GIT_ENV_SCRUB=""
+for _var in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do
+	GIT_ENV_SCRUB="$GIT_ENV_SCRUB -u $_var"
+done
+
+# shellcheck disable=SC2086
+clean_git() {
+	env $GIT_ENV_SCRUB git "$@"
+}
+
 GIT_REMOTE_ORIGIN_URL=$(git config --get remote.origin.url)
-TARGET_REMOTE_ORIGIN_URL=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_INDEX_FILE git -C "$ACTIVITY_REPO_DIR" config --get remote.origin.url)
+TARGET_REMOTE_ORIGIN_URL=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get remote.origin.url)
 
 if [ "$GIT_REMOTE_ORIGIN_URL" = "$TARGET_REMOTE_ORIGIN_URL" ]; then
 	exit 0
 fi
 
 GIT_USER_EMAIL=$(git config --get user.email)
-TARGET_USER_EMAIL=$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_INDEX_FILE git -C "$ACTIVITY_REPO_DIR" config --get user.email)
+TARGET_USER_EMAIL=$(clean_git -C "$ACTIVITY_REPO_DIR" config --get user.email)
 
 # Commits made as the mirror's identity and pushed to the mirror's host already
 # count on that profile. A repo without a remote yet will most likely be pushed
